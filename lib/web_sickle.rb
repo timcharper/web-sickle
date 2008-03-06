@@ -4,6 +4,7 @@ class Base
   
   # form_value is used to interface with the current select form
   attr_reader :form_value
+  attr_accessor :page
   
   def initialize(options = {})
     @page = nil
@@ -28,6 +29,10 @@ class Base
   protected
     # expected - returns true / false depending on success
     def do_login
+      raise "Implement me!"
+    end
+    
+    def do_harvest
       raise "Implement me!"
     end
   
