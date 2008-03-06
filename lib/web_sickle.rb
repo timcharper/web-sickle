@@ -1,4 +1,3 @@
-require 'hash_proxy'
 module WebSickle
 class Base
   

@@ -8,26 +8,27 @@ class TableReader
       :header_selector => " > th",
       :header_proc => lambda { |th| th.inner_text.strip },
       :body_selector => " > td",
-      :body_proc => lambda { |td| td.inner_text.strip },
+      :body_proc => lambda { |header, td| td.inner_text.strip },
       :header_offset => 0,
       :body_offset => 1
     }.merge(p_options)
     @options[:body_range] ||= options[:body_offset]..-1
-    @rows = options[:row_selectors].map{|row_selector| element / row_selector}.compact.flatten
+    raw_rows = options[:row_selectors].map{|row_selector| element / row_selector}.compact.flatten
     
-    @header_row = @rows[options[:header_offset]]
-    @body_rows = @rows[options[:body_range]]
-    @extra_rows = (options[:body_range].last+1)==0 ? [] : @rows[(options[:body_range].last+1)..-1]
+    @header_row = raw_rows[options[:header_offset]]
+    @body_rows = raw_rows[options[:body_range]]
+    @extra_rows = (options[:body_range].last+1)==0 ? [] : raw_rows[(options[:body_range].last+1)..-1]
     
     @headers = (@header_row / options[:header_selector]).map(&options[:header_proc])
   end
   
-  def each_row(&block)
-    @body_rows.map do |row|
-      data_array = (row / options[:body_selector]).map(&options[:body_proc])
-      data_hash = array_to_hash(data_array, @headers)
-      yield data_hash if block_given?
-      data_hash
+  def rows
+    @rows ||= @body_rows.map do |row|
+      hash = {}
+      data_array = (headers).zip(row / options[:body_selector]).each do |column_name, td|
+        hash[column_name] = options[:body_proc].call(column_name, td)
+      end
+      hash
     end
   end
   
