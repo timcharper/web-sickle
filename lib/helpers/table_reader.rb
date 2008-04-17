@@ -6,7 +6,7 @@ class TableReader
     @options = {
       :row_selectors => [" > tr", "thead > tr", "tbody > tr"],
       :header_selector => " > th",
-      :header_proc => lambda { |th| th.inner_text.strip },
+      :header_proc => lambda { |th| th.inner_text.gsub(/[\n\s]+/, ' ').strip },
       :body_selector => " > td",
       :body_proc => lambda { |header, td| td.inner_text.strip },
       :header_offset => 0,
