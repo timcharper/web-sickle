@@ -108,8 +108,7 @@ class Base
   
     def set_form_values(set_pairs = {})
       set_pairs.each do |identifier, value|
-        set_form_value(identifier, value
-        )
+        set_form_value(identifier, value)
       end
     end
 
@@ -124,15 +123,20 @@ class Base
       end
     end
 
-    # open the current page somewhere else
+    # sets the given path to the current page, then opens it using our agent
     def open_page(path)
       set_page(agent.get(path))
     end
   
-    # uses Hpricot style css selectors to find the element.  Works with html pages, and file pages that happen to have xml-like content.
-    # throws error if can't find a match
+    # uses Hpricot style css selectors to find the element in the current +@page+.
     def select_element(match)
-      result = (@page.respond_to?(:/) ? @page : Hpricot(@page.body)) / match
+      select_element_in(@page, match)
+    end
+    
+    # uses Hpricot style css selectors to find the element in the given container.  Works with html pages, and file pages that happen to have xml-like content.
+    # throws error if can't find a match
+    def select_element_in(contents, match)
+      result = (contents.respond_to?(:/) ? contents : Hpricot(contents.body)) / match
       if result.blank?
         report_error("Tried to find element matching #{match}, but couldn't")
       else
