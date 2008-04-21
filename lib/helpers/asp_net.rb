@@ -10,8 +10,7 @@ module AspNet
         nil
       end
     @form.fields << WWW::Mechanize::Form::Field.new("__EVENTTARGET", target_element ? target_element.name : "") if target_element
-    result = submit_form
-    result.body
+    submit_form_button
   end
 end
 end
