@@ -33,6 +33,22 @@ EOF
         report_error("Error: Expected #{left.inspect} to contain #{right.inspect}, but didn't. #{message}") unless left.include?(item)
       end
     end
+    
+    def assert(passes, message = nil)
+      report_error("Error: expected true, got false.  #{message}") unless passes
+    end
+    
+    def assert_link_text(link, text)
+      case text
+      when String
+        assert_equals(link.text, text)
+      when Regexp
+        assert(link.text.match(text))
+      else
+        raise ArgumentError, "Don't know how to assert an object like #{text.inspect} - expected: Regexp or String"
+      end
+    end
+    
   end
   
 end
