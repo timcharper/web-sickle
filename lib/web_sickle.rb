@@ -87,7 +87,7 @@ class Base
     end
     
     def submit_form(options = {})
-      options[:button] ||= :first
+      options[:button] = :first unless options.has_key?(:button)
       options[:identified_by] ||= :first
       select_form(options[:identified_by])
       set_form_values(options[:values]) if options[:values]
@@ -163,9 +163,18 @@ class Base
       report_error("Couldn't find form on page at #{page.uri} with attributes #{identifier.inspect}") if @form.nil?
       @form
     end
+    
+    def format_error(msg)
+      error = "Error encountered: #{msg}."
+      begin
+        error << "\n\nPage URL:#{page.uri.to_s}\nPage body:\n#{page.body}" if page
+      rescue
+      end
+      error
+    end
 
     def report_error(msg)
-      raise "Error encountered: #{msg}.\n\nPage URL:#{page.uri.to_s}\nPage body:\n#{page.body}"
+      raise format_error(msg)
     end
     
     def click(link)
