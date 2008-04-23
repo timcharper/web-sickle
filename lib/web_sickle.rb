@@ -1,3 +1,6 @@
+class AssertionException < Exception
+end
+
 module WebSickle
 class Base
   
@@ -174,7 +177,7 @@ class Base
     end
 
     def report_error(msg)
-      raise format_error(msg)
+      raise AssertionException, format_error(msg)
     end
     
     def click(link)
