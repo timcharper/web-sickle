@@ -7,7 +7,6 @@ class Base
   
   def initialize(options = {})
     @page = nil
-    @pages = []
     @form_value = HashProxy.new(
       :set => lambda { |identifier, value| set_form_value(identifier, value)}, 
       :get => lambda { |identifier| get_form_value(identifier)}
@@ -131,8 +130,21 @@ class Base
   
     # uses Hpricot style css selectors to find the element.  Works with html pages, and file pages that happen to have xml-like content.
     # throws error if can't find a match
+    # Uses Hpricot#/ (or Hpricot#search)
     def select_element(match)
       result = (@page.respond_to?(:/) ? @page : Hpricot(@page.body)) / match
+      if result.blank?
+        report_error("Tried to find element matching #{match}, but couldn't")
+      else
+        result
+      end
+    end
+  
+    # uses Hpricot style css selectors to find the element.  Works with html pages, and file pages that happen to have xml-like content.
+    # throws error if can't find a match
+    # Uses Hpricot#at
+    def detect_element(match)
+      result = (@page.respond_to?(:at) ? @page : Hpricot(@page.body)).at(match)
       if result.blank?
         report_error("Tried to find element matching #{match}, but couldn't")
       else
@@ -156,7 +168,6 @@ class Base
   private
     def set_page(p)
       @form = nil
-      @pages << @page
       @page = p
       @page
     end
