@@ -1,3 +1,6 @@
+class AssertionException < Exception
+end
+
 module WebSickle
 class Base
   
@@ -38,13 +41,19 @@ class Base
     def agent
       @agent ||= new_mechanize_agent
     end
+    
+    def make_identifier(identifier, valid_keys = nil)
+      identifier = {:name => identifier} unless identifier.is_a?(Hash) || identifier.is_a?(Symbol)
+      identifier.assert_valid_keys(valid_keys) if identifier.is_a?(Hash) && valid_keys
+      identifier
+    end
   
     def find_field(identifier)
       if @form.nil?
         report_error("No form is selected when trying to find field by #{identifier.inspect}")
         return
       end
-      identifier = {:name => identifier} unless identifier.is_a?(Hash)
+      identifier = make_identifier(identifier, [:name])
       identifier.assert_valid_keys(:name)
       field = find_in_collection(@form.fields + @form.checkboxes, identifier)
       if field
@@ -61,8 +70,7 @@ class Base
     # find_button(:name => "btnSubmit")
     # find_button(:name => "btnSubmit", :value => /Lucky/) - finds a button named btnSubmit with a value matching /Lucky/
     def find_button(identifier)
-      identifier = {:name => identifier} unless identifier.is_a?(Hash)
-      identifier.assert_valid_keys(:value, :name)
+      identifier = make_identifier(identifier, [:value, :name])
       button = find_in_collection(@form.buttons, identifier)
       if button
         button
@@ -74,17 +82,24 @@ class Base
   
     # the magic method that powers find_button, find_field.  Does not throw an error if not found
     def find_in_collection(collection, identifier)
+      return collection.first if identifier == :first
       collection.find do |item|
         identifier.all? { |k, criteria| is_a_match?(criteria, item.send(k)) }
       end
     end
-  
+    
+    def submit_form(options = {})
+      options[:button] = :first unless options.has_key?(:button)
+      options[:identified_by] ||= :first
+      select_form(options[:identified_by])
+      set_form_values(options[:values]) if options[:values]
+      submit_form_button(options[:button])
+    end
+    
     # submits the current form
-    def submit_form(button_criteria = nil, options = {})
+    def submit_form_button(button_criteria = nil, options = {})
       button = 
         case button_criteria
-        when :first_button
-          @form.buttons.first
         when nil
           nil
         else
@@ -107,8 +122,7 @@ class Base
   
     def set_form_values(set_pairs = {})
       set_pairs.each do |identifier, value|
-        set_form_value(identifier, value
-        )
+        set_form_value(identifier, value)
       end
     end
 
@@ -123,16 +137,21 @@ class Base
       end
     end
 
-    # open the current page somewhere else
-    def open_page(path)
-      set_page(agent.get(path))
+    # sets the given path to the current page, then opens it using our agent
+    def open_page(path, parameters = [], referer = nil)
+      set_page(agent.get(path, parameters, referer))
     end
   
-    # uses Hpricot style css selectors to find the element.  Works with html pages, and file pages that happen to have xml-like content.
-    # throws error if can't find a match
+    # uses Hpricot style css selectors to find the elements in the current +page+.
     # Uses Hpricot#/ (or Hpricot#search)
     def select_element(match)
-      result = (@page.respond_to?(:/) ? @page : Hpricot(@page.body)) / match
+      select_element_in(page, match)
+    end
+    
+    # uses Hpricot style css selectors to find the element in the given container.  Works with html pages, and file pages that happen to have xml-like content.
+    # throws error if can't find a match
+    def select_element_in(contents, match)
+      result = (contents.respond_to?(:/) ? contents : Hpricot(contents.body)) / match
       if result.blank?
         report_error("Tried to find element matching #{match}, but couldn't")
       else
@@ -154,22 +173,33 @@ class Base
   
     # select the current form
     def select_form(identifier = {})
-      identifier = {:name => identifier} unless identifier.is_a?(Hash)
-      identifier.assert_valid_keys(:name, :action, :method)
-      @form = find_in_collection(@page.forms, identifier)
-      report_error("Couldn't find form on page at #{@page.uri} with attributes #{identifier.inspect}") if @form.nil?
+      identifier = make_identifier(identifier, [:name, :action, :method])
+      @form = find_in_collection(page.forms, identifier)
+      report_error("Couldn't find form on page at #{page.uri} with attributes #{identifier.inspect}") if @form.nil?
       @form
+    end
+    
+    def format_error(msg)
+      error = "Error encountered: #{msg}."
+      begin
+        error << "\n\nPage URL:#{page.uri.to_s}\nPage body:\n#{page.body}" if page
+      rescue
+      end
+      error
     end
 
     def report_error(msg)
-      raise "Error encountered: #{msg}.\n\nPage URL:#{@page.uri.to_s}\nPage body:\n#{@page.body}"
+      raise AssertionException, format_error(msg)
     end
-  
+    
+    def click(link)
+      set_page(agent.click(link))
+    end
+    
   private
     def set_page(p)
       @form = nil
       @page = p
-      @page
     end
 
     def is_a_match?(criteria, value)
