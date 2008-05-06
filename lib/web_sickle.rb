@@ -10,7 +10,6 @@ class Base
   
   def initialize(options = {})
     @page = nil
-    @pages = []
     @form_value = HashProxy.new(
       :set => lambda { |identifier, value| set_form_value(identifier, value)}, 
       :get => lambda { |identifier| get_form_value(identifier)}
@@ -143,7 +142,8 @@ class Base
       set_page(agent.get(path, parameters, referer))
     end
   
-    # uses Hpricot style css selectors to find the element in the current +page+.
+    # uses Hpricot style css selectors to find the elements in the current +page+.
+    # Uses Hpricot#/ (or Hpricot#search)
     def select_element(match)
       select_element_in(page, match)
     end
@@ -152,6 +152,18 @@ class Base
     # throws error if can't find a match
     def select_element_in(contents, match)
       result = (contents.respond_to?(:/) ? contents : Hpricot(contents.body)) / match
+      if result.blank?
+        report_error("Tried to find element matching #{match}, but couldn't")
+      else
+        result
+      end
+    end
+  
+    # uses Hpricot style css selectors to find the element.  Works with html pages, and file pages that happen to have xml-like content.
+    # throws error if can't find a match
+    # Uses Hpricot#at
+    def detect_element(match)
+      result = (@page.respond_to?(:at) ? @page : Hpricot(@page.body)).at(match)
       if result.blank?
         report_error("Tried to find element matching #{match}, but couldn't")
       else
@@ -187,7 +199,6 @@ class Base
   private
     def set_page(p)
       @form = nil
-      @pages << page
       @page = p
     end
 
