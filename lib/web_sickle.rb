@@ -170,7 +170,7 @@ class Base
     def format_error(msg)
       error = "Error encountered: #{msg}."
       begin
-        error << "\n\nPage URL:#{page.uri.to_s}\nPage body:\n#{page.body}" if page
+        error << "\n\nPage URL:#{page.uri.to_s}" if page
       rescue
       end
       error
