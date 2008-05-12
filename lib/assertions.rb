@@ -29,7 +29,7 @@ EOF
     end
 
     def assert_contains(left, right, message = nil)
-      right.each do | item |
+      (right.is_a?(Array) ? right : [right]).each do | item |
         report_error("Error: Expected #{left.inspect} to contain #{right.inspect}, but didn't. #{message}") unless left.include?(item)
       end
     end
