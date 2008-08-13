@@ -1,6 +1,6 @@
 require 'rubygems'
-gem 'mechanize', "0.7.6"
-gem "hpricot", "0.6"
+gem 'mechanize', ">= 0.7.6"
+gem "hpricot", ">= 0.6"
 require 'hpricot'
 require 'mechanize'
 ::Hpricot.buffer_size = 524288
