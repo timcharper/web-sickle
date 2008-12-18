@@ -32,7 +32,7 @@ module WebSickle
       end
       identifier = make_identifier(identifier, [:name])
       identifier.assert_valid_keys(:name)
-      field = find_in_collection(@form.fields + @form.checkboxes, identifier)
+      field = find_in_collection(@form.radiobuttons + @form.fields + @form.checkboxes, identifier)
       if field
         field
       else
