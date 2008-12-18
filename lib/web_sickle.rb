@@ -1,9 +1,6 @@
-class AssertionException < Exception
-end
+class WebsickleException < Exception; end
 
 module WebSickle
-class Base
-  
   # form_value is used to interface with the current select form
   attr_reader :form_value
   attr_accessor :page
@@ -16,27 +13,7 @@ class Base
     )
   end
   
-  def login
-    @logged_in = do_login
-  end
-  
-  def logged_in?; @logged_in; end
-  
-  def harvest
-    login unless logged_in?
-    do_harvest
-  end
-  
   protected
-    # expected - returns true / false depending on success
-    def do_login
-      raise "Implement me!"
-    end
-    
-    def do_harvest
-      raise "Implement me!"
-    end
-  
     # our friendly mechinze agent
     def agent
       @agent ||= new_mechanize_agent
@@ -105,7 +82,6 @@ class Base
         else
           find_button(button_criteria)
         end
-
       set_page(agent.submit(@form, button))
     end
 
@@ -145,7 +121,7 @@ class Base
     # uses Hpricot style css selectors to find the elements in the current +page+.
     # Uses Hpricot#/ (or Hpricot#search)
     def select_element(match)
-      select_element_in(page, match)
+      select_element_in(@page, match)
     end
     
     # uses Hpricot style css selectors to find the element in the given container.  Works with html pages, and file pages that happen to have xml-like content.
@@ -174,22 +150,22 @@ class Base
     # select the current form
     def select_form(identifier = {})
       identifier = make_identifier(identifier, [:name, :action, :method])
-      @form = find_in_collection(page.forms, identifier)
-      report_error("Couldn't find form on page at #{page.uri} with attributes #{identifier.inspect}") if @form.nil?
+      @form = find_in_collection(@page.forms, identifier)
+      report_error("Couldn't find form on page at #{@page.uri} with attributes #{identifier.inspect}") if @form.nil?
       @form
     end
     
     def format_error(msg)
       error = "Error encountered: #{msg}."
       begin
-        error << "\n\nPage URL:#{page.uri.to_s}" if page
+        error << "\n\nPage URL:#{@page.uri.to_s}" if @page
       rescue
       end
       error
     end
 
     def report_error(msg)
-      raise AssertionException, format_error(msg)
+      raise WebsickleException, format_error(msg)
     end
     
     def click(link)
@@ -218,7 +194,4 @@ class Base
       a.read_timeout = 600 # 10 minutes
       a
     end
-  
-end
-  
 end
