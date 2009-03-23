@@ -168,8 +168,24 @@ module WebSickle
       raise WebsickleException, format_error(msg)
     end
     
-    def click(link)
-      set_page(agent.click(link))
+    def click_link(options)
+      set_page(find_link(options).click)
+    end
+    
+    def find_link(identifier)
+      if @page.nil?
+        report_error("No page loaded #{identifier.inspect}")
+        return
+      end
+      identifier = make_identifier(identifier, [:href, :text])
+      identifier.assert_valid_keys(:href, :text)
+      link = find_in_collection(@page.links, identifier)
+      if link
+        link
+      else
+        report_error("Tried to find link identified by #{identifier.inspect}, but failed.\nLinks are: #{@page.links.map{|f| f.inspect} * ", \n  "}") 
+        nil
+      end
     end
     
   private
